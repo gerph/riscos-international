@@ -1,0 +1,101 @@
+/*******************************************************************
+ * File:        international
+ * Purpose:     Shared declarations for the International module.
+ * Author:      Gerph
+ ******************************************************************/
+
+#ifndef INTERNATIONAL_H
+#define INTERNATIONAL_H
+
+#include <stdint.h>
+
+#define INTERNATIONAL_GLYPH_ROWS 8
+#define INTERNATIONAL_UNKNOWN_GLYPH 0xffffffffU
+
+typedef struct InternationalGlyph {
+    uint32_t codepoint;
+    uint8_t rows[INTERNATIONAL_GLYPH_ROWS];
+} InternationalGlyph;
+
+typedef struct InternationalFontEntry {
+    uint8_t character;
+    uint32_t codepoint;
+} InternationalFontEntry;
+
+typedef struct InternationalFont {
+    uint32_t alphabet;
+    const InternationalFontEntry *entries;
+    uint32_t entry_count;
+} InternationalFont;
+
+typedef struct InternationalName {
+    const char *name;
+    uint32_t number;
+} InternationalName;
+
+extern const InternationalGlyph international_glyphs[];
+extern const uint32_t international_glyph_count;
+
+extern const InternationalFont international_fonts[];
+extern const uint32_t international_font_count;
+
+extern const InternationalName international_countries[];
+extern const uint32_t international_country_count;
+extern const InternationalName international_alphabets[];
+extern const uint32_t international_alphabet_count;
+
+/*******************************************************************
+ Function:      international_lookup_name
+ Description:   Looks up an International name, accepting a full name or
+                a dot-terminated abbreviation case-insensitively.
+ Parameters:    names = table to search
+                count = number of table entries
+                name = supplied name
+                number = returned number
+ Returns:       non-zero if the name was recognised
+ ******************************************************************/
+int international_lookup_name(const InternationalName *names,
+                              uint32_t count,
+                              const char *name,
+                              uint32_t *number);
+
+/*******************************************************************
+ Function:      international_lookup_number
+ Description:   Looks up an International numeric identifier.
+ Parameters:    names = table to search
+                count = number of table entries
+                number = identifier to find
+ Returns:       matching name, or NULL
+ ******************************************************************/
+const char *international_lookup_number(const InternationalName *names,
+                                        uint32_t count,
+                                        uint32_t number);
+
+/*******************************************************************
+ Function:      international_country_alphabet
+ Description:   Returns the alphabet associated with a country.
+ Parameters:    country = country number
+                alphabet = returned alphabet number
+ Returns:       non-zero if the country is recognised
+ ******************************************************************/
+int international_country_alphabet(uint32_t country, uint32_t *alphabet);
+
+/*******************************************************************
+ Function:      international_font_glyph
+ Description:   Finds the glyph for an alphabet and system-font character.
+ Parameters:    alphabet = alphabet number
+                character = system font character
+ Returns:       glyph, or NULL
+ ******************************************************************/
+const InternationalGlyph *international_font_glyph(uint32_t alphabet,
+                                                    uint32_t character);
+
+/*******************************************************************
+ Function:      international_ucs_glyph
+ Description:   Finds a glyph by its UCS codepoint.
+ Parameters:    codepoint = UCS codepoint
+ Returns:       glyph, or NULL
+ ******************************************************************/
+const InternationalGlyph *international_ucs_glyph(uint32_t codepoint);
+
+#endif

@@ -1,0 +1,75 @@
+/*******************************************************************
+ * File:        data
+ * Purpose:     Country, alphabet and country-to-alphabet definitions.
+ * Author:      Gerph
+ ******************************************************************/
+
+#include "international.h"
+
+const InternationalName international_countries[] = {
+    { "Default", 0 }, { "UK", 1 }, { "Master", 2 }, { "Compact", 3 },
+    { "Italy", 4 }, { "Spain", 5 }, { "France", 6 }, { "Germany", 7 },
+    { "Portugal", 8 }, { "Esperanto", 9 }, { "Greece", 10 },
+    { "Sweden", 11 }, { "Finland", 12 }, { "Denmark", 14 },
+    { "Norway", 15 }, { "Iceland", 16 }, { "Canada1", 17 },
+    { "Canada2", 18 }, { "Canada", 19 }, { "Turkey", 20 },
+    { "Russia", 24 }, { "Russia2", 25 }, { "Israel", 26 },
+    { "Mexico", 27 }, { "LatinAm", 28 }, { "Australia", 29 },
+    { "Austria", 30 }, { "Belgium", 31 }, { "Japan", 32 },
+    { "MiddleEast", 33 }, { "Netherlands", 34 }, { "Switzerland", 35 },
+    { "Wales", 36 }, { "USA", 48 }, { "Wales2", 49 },
+    { "DvorakUK", 70 }, { "DvorakUSA", 71 }, { "ISO1", 80 }
+};
+
+const uint32_t international_country_count =
+    sizeof(international_countries) / sizeof(international_countries[0]);
+
+const InternationalName international_alphabets[] = {
+    { "Bfont", 100 }, { "Latin1", 101 }, { "Latin2", 102 },
+    { "Latin3", 103 }, { "Latin4", 104 }, { "Cyrillic", 105 },
+    { "Greek", 107 }, { "Hebrew", 108 }, { "Latin5", 109 },
+    { "Welsh", 110 }, { "Latin9", 112 }, { "Latin6", 113 },
+    { "Cyrillic2", 120 }
+};
+
+const uint32_t international_alphabet_count =
+    sizeof(international_alphabets) / sizeof(international_alphabets[0]);
+
+typedef struct CountryAlphabet {
+    uint8_t country;
+    uint8_t alphabet;
+} CountryAlphabet;
+
+static const CountryAlphabet country_alphabets[] = {
+    { 1, 101 }, { 2, 100 }, { 3, 100 }, { 4, 101 }, { 5, 101 },
+    { 6, 101 }, { 7, 101 }, { 8, 101 }, { 9, 103 }, { 10, 107 },
+    { 11, 101 }, { 12, 101 }, { 14, 101 }, { 15, 101 }, { 16, 101 },
+    { 17, 101 }, { 18, 101 }, { 19, 101 }, { 20, 109 }, { 24, 105 },
+    { 25, 120 }, { 26, 108 }, { 27, 101 }, { 28, 101 }, { 29, 101 },
+    { 30, 101 }, { 31, 101 }, { 32, 101 }, { 33, 101 }, { 34, 101 },
+    { 35, 101 }, { 36, 101 }, { 48, 101 }, { 49, 110 }, { 70, 101 },
+    { 71, 101 }, { 80, 101 }
+};
+
+/*******************************************************************
+ Function:      international_country_alphabet
+ Description:   Returns the alphabet associated with a country.
+ Parameters:    country = country number
+                alphabet = returned alphabet number
+ Returns:       non-zero if the country was recognised
+ ******************************************************************/
+int international_country_alphabet(uint32_t country, uint32_t *alphabet)
+{
+    uint32_t index;
+
+    for (index = 0; index < sizeof(country_alphabets) / sizeof(country_alphabets[0]); index++)
+    {
+        if (country_alphabets[index].country == country)
+        {
+            *alphabet = country_alphabets[index].alphabet;
+            return 1;
+        }
+    }
+
+    return 0;
+}

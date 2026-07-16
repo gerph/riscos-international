@@ -1,0 +1,21 @@
+REM >test_service
+REM Smoke test for International Service_International translations.
+ON ERROR ERROR EXT ERR, REPORT$ + " at line " + STR$(ERL/10)
+
+DIM name_buffer% 31
+SYS "OS_ServiceCall", 0, &43, 2, 1, name_buffer%, 32 TO , claimed%, , , , written%
+IF claimed% <> 0 THEN ERROR 1, "Country number was not claimed"
+IF written% <> 2 THEN ERROR 1, "Country name length mismatch"
+name_buffer%?written% = 0
+IF FNstring0(name_buffer%) <> "UK" THEN ERROR 1, "Country name mismatch"
+
+SYS "OS_ServiceCall", 0, &43, 4, 49 TO , claimed%, , , alphabet%
+IF claimed% <> 0 THEN ERROR 1, "Country alphabet was not claimed"
+IF alphabet% <> 110 THEN ERROR 1, "Country alphabet mismatch"
+
+PRINT "International service smoke test passed"
+END
+
+DEFFNstring0(ptr%):LOCAL value$
+SYS "OS_IntOn", ptr% TO value$ := value$
+= value$

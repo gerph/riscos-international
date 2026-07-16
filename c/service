@@ -1,0 +1,169 @@
+/*******************************************************************
+ * File:        service
+ * Purpose:     Service_International request handling.
+ * Author:      Gerph
+ ******************************************************************/
+
+#include "kernel.h"
+#include "swis.h"
+
+#include "riscos/Services.h"
+
+#include "international.h"
+#include "service.h"
+
+#ifndef __riscos64
+
+static void define_glyph(uint32_t character, const InternationalGlyph *glyph)
+{
+    _kernel_swi_regs registers;
+
+    if (glyph == 0)
+    {
+        return;
+    }
+
+    _kernel_swi(OS_WriteI + 23, 0, 0);
+    registers.r[0] = (int)character;
+    if (_kernel_swi(OS_WriteC, &registers, 0) != 0)
+    {
+        return;
+    }
+    registers.r[0] = (int)glyph->rows;
+    registers.r[1] = INTERNATIONAL_GLYPH_ROWS;
+    _kernel_swi(OS_WriteN, &registers, 0);
+}
+
+static void service_name_to_number(_kernel_swi_regs *r,
+                                   const InternationalName *names,
+                                   uint32_t count)
+{
+    uint32_t number;
+
+    if (international_lookup_name(names, count, (const char *)r->r[3], &number))
+    {
+        r->r[4] = (int)number;
+        r->r[1] = 0;
+    }
+}
+
+static void service_number_to_name(_kernel_swi_regs *r,
+                                   const InternationalName *names,
+                                   uint32_t count)
+{
+    const char *name;
+    char *destination;
+    uint32_t size;
+    uint32_t index;
+
+    name = international_lookup_number(names, count, (uint32_t)r->r[3]);
+    if (name == 0)
+    {
+        return;
+    }
+
+    destination = (char *)r->r[4];
+    size = (uint32_t)r->r[5];
+    for (index = 0; index < size && name[index] != '\0'; index++)
+    {
+        destination[index] = name[index];
+    }
+    r->r[5] = (int)index;
+    r->r[1] = 0;
+}
+
+static void service_define_range(_kernel_swi_regs *r)
+{
+    uint32_t character;
+    uint32_t minimum;
+    uint32_t maximum;
+    const InternationalGlyph *glyph;
+
+    minimum = (uint32_t)r->r[4];
+    maximum = (uint32_t)r->r[5];
+    for (character = minimum; character <= maximum && character <= 0xff; character++)
+    {
+        glyph = international_font_glyph((uint32_t)r->r[3], character);
+        if (glyph != 0)
+        {
+            define_glyph(character, glyph);
+            r->r[1] = 0;
+        }
+    }
+}
+
+static void service_define_ucs(_kernel_swi_regs *r)
+{
+    const InternationalGlyph *glyph;
+
+    glyph = international_ucs_glyph((uint32_t)r->r[4]);
+    if (glyph != 0)
+    {
+        define_glyph((uint32_t)r->r[3], glyph);
+        r->r[1] = 0;
+    }
+}
+
+#endif
+
+/*******************************************************************
+ Function:      international_service
+ Description:   Handles Service_International requests and claims recognised
+                translations and font definitions.
+ Parameters:    r = service register block
+ Returns:       none
+ ******************************************************************/
+void international_service(_kernel_swi_regs *r)
+{
+    uint32_t alphabet;
+
+    if (r->r[1] != Service_International)
+    {
+        return;
+    }
+
+    switch (r->r[2])
+    {
+        case Inter_CNaToCNo:
+#ifndef __riscos64
+            service_name_to_number(r, international_countries,
+                                   international_country_count);
+#endif
+            break;
+        case Inter_ANaToANo:
+#ifndef __riscos64
+            service_name_to_number(r, international_alphabets,
+                                   international_alphabet_count);
+#endif
+            break;
+        case Inter_CNoToCNa:
+#ifndef __riscos64
+            service_number_to_name(r, international_countries,
+                                   international_country_count);
+#endif
+            break;
+        case Inter_ANoToANa:
+#ifndef __riscos64
+            service_number_to_name(r, international_alphabets,
+                                   international_alphabet_count);
+#endif
+            break;
+        case Inter_CNoToANo:
+            if (international_country_alphabet((uint32_t)r->r[3], &alphabet))
+            {
+                r->r[4] = (int)alphabet;
+                r->r[1] = 0;
+            }
+            break;
+        case Inter_Define:
+#ifndef __riscos64
+            service_define_range(r);
+#endif
+            break;
+        case Inter_DefineUCS:
+#ifndef __riscos64
+            service_define_ucs(r);
+#endif
+            break;
+    }
+}

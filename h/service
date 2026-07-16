@@ -1,0 +1,20 @@
+/*******************************************************************
+ * File:        service
+ * Purpose:     International service-call implementation interface.
+ * Author:      Gerph
+ ******************************************************************/
+
+#ifndef INTERNATIONAL_SERVICE_H
+#define INTERNATIONAL_SERVICE_H
+
+#include "kernel.h"
+
+/*******************************************************************
+ Function:      international_service
+ Description:   Handles Service_International requests.
+ Parameters:    r = service register block
+ Returns:       none
+ ******************************************************************/
+void international_service(_kernel_swi_regs *r);
+
+#endif

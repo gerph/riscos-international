@@ -1,22 +1,14 @@
 /*******************************************************************
  * File:        module
  * Purpose:     International2 module interface
- * Author:      YOUR NAME
+ * Author:      Gerph
  ******************************************************************/
-
-#include <stdlib.h>
-#include <stdio.h>
 
 #include "kernel.h"
 #include "modhead.h"
+#include "service.h"
 
-#define DEBUG
-
-#ifdef DEBUG
-#define dprintf if (1) printf
-#else
-#define dprintf if (0) printf
-#endif
+#define NULL 0
 
 
 /***************************************************************************
@@ -33,7 +25,9 @@
  **************************************************************************/
 _kernel_oserror *Mod_Init(const char *tail, int podule_base, void *pw)
 {
-    dprintf("Module International2 initialised\n");
+    (void)tail;
+    (void)podule_base;
+    (void)pw;
     return NULL;
 }
 
@@ -52,6 +46,23 @@ _kernel_oserror *Mod_Init(const char *tail, int podule_base, void *pw)
  **************************************************************************/
 _kernel_oserror *Mod_Final(int fatal, int podule_base, void *pw)
 {
-    dprintf("Module International2 dying\n");
+    (void)fatal;
+    (void)podule_base;
+    (void)pw;
     return NULL;
+}
+
+/*******************************************************************
+ Function:      Mod_Service
+ Description:   Dispatches International service calls.
+ Parameters:    service = service reason code
+                r = service register block
+                pw = module private word
+ Returns:       none
+ ******************************************************************/
+void Mod_Service(int service, _kernel_swi_regs *r, void *pw)
+{
+    (void)service;
+    (void)pw;
+    international_service(r);
 }

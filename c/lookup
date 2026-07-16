@@ -1,0 +1,181 @@
+/*******************************************************************
+ * File:        lookup
+ * Purpose:     Lookup helpers for International service data.
+ * Author:      Gerph
+ ******************************************************************/
+
+#include "international.h"
+
+typedef struct InternationalAlias {
+    uint32_t alias;
+    uint32_t glyph;
+} InternationalAlias;
+
+static const InternationalAlias glyph_aliases[] = {
+    { 0x00A0, 0x0020 }, { 0x00AD, 0x002D }, { 0x0110, 0x00D0 },
+    { 0x02C6, 0x005E }, { 0x02DA, 0x00B0 }, { 0x0384, 0x00B4 },
+    { 0x0401, 0x00CB }, { 0x0406, 0x0399 }, { 0x0407, 0x03AA },
+    { 0x2000, 0x0020 }, { 0x2001, 0x0020 }, { 0x2002, 0x0020 },
+    { 0x2003, 0x0020 }, { 0x2004, 0x0020 }, { 0x2005, 0x0020 },
+    { 0x2006, 0x0020 }, { 0x2007, 0x0020 }, { 0x2008, 0x0020 },
+    { 0x2009, 0x0020 }, { 0x200A, 0x0020 }, { 0x2010, 0x002D },
+    { 0x2011, 0x002D }, { 0x2012, 0x002D }, { 0x2015, 0x2014 },
+    { 0x2019, 0x02BC }, { 0x201A, 0x002C }, { 0x201B, 0x02BD },
+    { 0x2024, 0x002E }, { 0x2027, 0x00B7 }, { 0x2032, 0x110027 },
+    { 0x2126, 0x03A9 }, { 0x2206, 0x0394 }, { 0x220F, 0x03A0 },
+    { 0x2211, 0x03A3 }, { 0x2219, 0x2022 }, { 0x2266, 0x2264 },
+    { 0x2267, 0x2265 }
+};
+
+static int fold_character(int character)
+{
+    if (character >= 'a' && character <= 'z')
+    {
+        return character - ('a' - 'A');
+    }
+
+    return character;
+}
+
+/*******************************************************************
+ Function:      international_lookup_name
+ Description:   Looks up an International name, accepting an abbreviated name.
+ Parameters:    names = table to search
+                count = number of entries
+                name = supplied name
+                number = returned number
+ Returns:       non-zero if recognised
+ ******************************************************************/
+int international_lookup_name(const InternationalName *names,
+                              uint32_t count,
+                              const char *name,
+                              uint32_t *number)
+{
+    uint32_t index;
+    const char *candidate;
+    const char *input;
+    int abbreviated;
+
+    for (index = 0; index < count; index++)
+    {
+        candidate = names[index].name;
+        input = name;
+        abbreviated = 0;
+        while (*input != '\0' && *input > ' ')
+        {
+            if (*input == '.')
+            {
+                abbreviated = 1;
+                input++;
+                break;
+            }
+            if (fold_character((unsigned char)*input) !=
+                fold_character((unsigned char)*candidate))
+            {
+                break;
+            }
+            input++;
+            candidate++;
+        }
+        if ((*input == '\0' || *input <= ' ') && *candidate == '\0')
+        {
+            *number = names[index].number;
+            return 1;
+        }
+        if (abbreviated && (*input == '\0' || *input <= ' '))
+        {
+            *number = names[index].number;
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+/*******************************************************************
+ Function:      international_lookup_number
+ Description:   Looks up an International numeric identifier.
+ Parameters:    names = table to search
+                count = number of entries
+                number = identifier to find
+ Returns:       matching name, or NULL
+ ******************************************************************/
+const char *international_lookup_number(const InternationalName *names,
+                                        uint32_t count,
+                                        uint32_t number)
+{
+    uint32_t index;
+
+    for (index = 0; index < count; index++)
+    {
+        if (names[index].number == number)
+        {
+            return names[index].name;
+        }
+    }
+
+    return 0;
+}
+
+/*******************************************************************
+ Function:      international_ucs_glyph
+ Description:   Finds a glyph by UCS codepoint.
+ Parameters:    codepoint = UCS codepoint
+ Returns:       glyph, or NULL
+ ******************************************************************/
+const InternationalGlyph *international_ucs_glyph(uint32_t codepoint)
+{
+    uint32_t index;
+
+    for (index = 0; index < sizeof(glyph_aliases) / sizeof(glyph_aliases[0]); index++)
+    {
+        if (glyph_aliases[index].alias == codepoint)
+        {
+            codepoint = glyph_aliases[index].glyph;
+            break;
+        }
+    }
+
+    for (index = 0; index < international_glyph_count; index++)
+    {
+        if (international_glyphs[index].codepoint == codepoint)
+        {
+            return &international_glyphs[index];
+        }
+    }
+
+    return 0;
+}
+
+/*******************************************************************
+ Function:      international_font_glyph
+ Description:   Finds a glyph for an alphabet and system-font character.
+ Parameters:    alphabet = alphabet number
+                character = system font character
+ Returns:       glyph, or NULL
+ ******************************************************************/
+const InternationalGlyph *international_font_glyph(uint32_t alphabet,
+                                                    uint32_t character)
+{
+    uint32_t font_index;
+    uint32_t entry_index;
+    const InternationalFont *font;
+
+    for (font_index = 0; font_index < international_font_count; font_index++)
+    {
+        font = &international_fonts[font_index];
+        if (font->alphabet == alphabet)
+        {
+            for (entry_index = 0; entry_index < font->entry_count; entry_index++)
+            {
+                if (font->entries[entry_index].character == character)
+                {
+                    return international_ucs_glyph(font->entries[entry_index].codepoint);
+                }
+            }
+            return 0;
+        }
+    }
+
+    return 0;
+}
